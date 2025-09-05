@@ -19,7 +19,7 @@ const lower_bound = (arr, n) => {
     else last = middle - 1;
   }
   return first;
-}
+};
 
 const upper_bound = (arr, n) => {
   let first = 0,
@@ -32,3 +32,25 @@ const upper_bound = (arr, n) => {
   }
   return first;
 };
+
+class Queue {
+  #stackPush = [];
+  #stackPop = [];
+
+  enqueue(value) {
+    this.#stackPush.push(value);
+  }
+
+  dequeue() {
+    if (this.#stackPop.length === 0) {
+      while (this.#stackPush.length > 0) {
+        this.#stackPop.push(this.#stackPush.pop());
+      }
+    }
+    return this.#stackPop.pop();
+  }
+
+  empty() {
+    return this.#stackPush.length === 0 && this.#stackPop.length === 0;
+  }
+}
