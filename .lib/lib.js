@@ -33,6 +33,27 @@ const upper_bound = (arr, n) => {
   return first;
 };
 
+const permutation = (items, k = items.length) => {
+  const res = [];
+  const used = new Array(items.length).fill(false);
+  const backtrack = (path) => {
+    if (path.length === k) {
+      res.push([...path]);
+      return;
+    }
+    for (let i = 0; i < items.length; i++) {
+      if (used[i]) continue;
+      used[i] = true;
+      path.push(items[i]);
+      backtrack(path);
+      path.pop();
+      used[i] = false;
+    }
+  };
+  backtrack([]);
+  return res;
+};
+
 class Queue {
   #stackPush = [];
   #stackPop = [];
