@@ -33,26 +33,58 @@ const upper_bound = (arr, n) => {
   return first;
 };
 
-const permutation = (items, k = items.length) => {
-  const res = [];
+function permutations(iterable, k = [...iterable].length) {
+  const items = [...iterable];
   const used = new Array(items.length).fill(false);
-  const backtrack = (path) => {
+  const path = [];
+  const result = [];
+
+  function dfs() {
     if (path.length === k) {
-      res.push([...path]);
+      result.push(path.slice());
       return;
     }
     for (let i = 0; i < items.length; i++) {
       if (used[i]) continue;
+
       used[i] = true;
       path.push(items[i]);
-      backtrack(path);
-      path.pop();
+      dfs();
+      path.pop(); // backtrack
       used[i] = false;
     }
-  };
-  backtrack([]);
-  return res;
-};
+  }
+
+  dfs();
+  return result;
+}
+
+function distinct_permutations(iterable) {
+  const items = [...iterable].sort(); // 重複除去ロジックのためソート
+  const used = new Array(items.length).fill(false);
+  const path = [];
+  const result = [];
+
+  function dfs() {
+    if (path.length === items.length) {
+      result.push(path.slice());
+      return;
+    }
+    for (let i = 0; i < items.length; i++) {
+      if (used[i]) continue;
+      // 直前と同じ値だが直前が未使用ならスキップ（重複生成を防止）
+      if (i > 0 && items[i] === items[i - 1] && !used[i - 1]) continue;
+      used[i] = true;
+      path.push(items[i]);
+      dfs();
+      path.pop(); // backtrack
+      used[i] = false;
+    }
+  }
+
+  dfs();
+  return result;
+}
 
 class Queue {
   #stackPush = [];
