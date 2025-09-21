@@ -1,3 +1,9 @@
+const chunk = (a, size) =>
+  Array.from(
+    { length: Math.ceil(a.length / size) }, //
+    (_, i) => a.slice(i * size, i * size + size)
+  );
+
 const isqrt = (num) => {
   if (num < 0n) throw new RangeError();
   if (num < 2n) return num;
