@@ -147,4 +147,8 @@ class UnionFind {
   same(x, y) {
     return this.find(x) === this.find(y);
   }
+
+  size(x) {
+    return this.size[this.find(x)];
+  }
 }
