@@ -137,6 +137,10 @@ class PriorityQueue {
     return this.empty() ? null : this.#heap[0].value;
   }
 
+  size() {
+    return this.#heap.length;
+  }
+
   empty() {
     return this.#heap.length === 0;
   }
