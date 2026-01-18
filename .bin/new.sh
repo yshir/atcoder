@@ -26,7 +26,8 @@ cat <<-EOF > .vscode/settings.json
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "github.copilot.enable": {
     "*": false
-  }
+  },
+  "cSpell.words": ["Fenwick"]
 }
 EOF
 
