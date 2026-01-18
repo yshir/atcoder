@@ -3,5 +3,6 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "github.copilot.enable": {
     "*": false
-  }
+  },
+  "cSpell.words": ["Fenwick"]
 }
