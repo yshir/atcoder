@@ -13,31 +13,34 @@ for (let i = 0; i < N - 1; i++) {
   G[v].push(u);
 }
 
+const compress = new Map([...new Set(A)].map((v, i) => [v, i]));
+const B = A.map((x) => compress.get(x));
+const freq = new Int32Array(N);
+
 const ans = [];
-const set = new Set();
+let cnt = 0;
 
-const dfsNo = (u, p) => {
-  ans[u] = false;
-  set.add(A[u]);
+const dfs = (u, p) => {
+  const adding = freq[B[u]] === 0;
+  if (adding) {
+    freq[B[u]]++;
+  } else {
+    cnt++;
+  }
+
+  ans[u] = cnt > 0;
   for (const v of G[u]) {
     if (v === p) continue;
-    if (set.has(A[v])) {
-      dfsYes(v, u);
-    } else {
-      dfsNo(v, u);
-    }
+    dfs(v, u);
   }
-  set.delete(A[u]);
-};
 
-const dfsYes = (u, p) => {
-  ans[u] = true;
-  for (const v of G[u]) {
-    if (v === p) continue;
-    dfsYes(v, u);
+  if (adding) {
+    freq[B[u]]--;
+  } else {
+    cnt--;
   }
 };
 
-dfsNo(0, -1);
+dfs(0, -1);
 
 console.log(ans.map((x) => (x ? 'Yes' : 'No')).join('\n'));
