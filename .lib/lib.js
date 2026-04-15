@@ -92,6 +92,29 @@ function distinct_permutations(iterable) {
   return result;
 }
 
+const prime_sieve = (x) => {
+  const composite = new Uint8Array(x + 1);
+
+  // even
+  for (let i = 4; i <= x; i += 2) {
+    composite[i] = 1;
+  }
+  // odd
+  for (let i = 3; i * i <= x; i += 2) {
+    if (!composite[i]) {
+      for (let j = i * i; j <= x; j += i) {
+        composite[j] = 1;
+      }
+    }
+  }
+
+  const primes = [];
+  for (let i = 2; i <= x; i++) {
+    if (!composite[i]) primes.push(i);
+  }
+  return primes;
+};
+
 class Queue {
   #stackPush = [];
   #stackPop = [];
