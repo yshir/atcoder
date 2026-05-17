@@ -92,74 +92,68 @@ function distinct_permutations(iterable) {
   return result;
 }
 
-const nCr = (() => {
-  const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
-  const modCaches = new Map();
+const { nCr, nPr, nHr } = (() => {
+  const _MOD = 998244353;
+  const _CAP = 1e7;
 
-  const modpow = (base, exp, mod) => {
-    let result = 1n;
-    base %= mod;
-    while (exp > 0n) {
-      if (exp & 1n) result = (result * base) % mod;
-      base = (base * base) % mod;
-      exp >>= 1n;
+  const mulMod = (a, b) => {
+    const ah = Math.floor(a / 32768);
+    const al = a % 32768;
+    return (((ah * b) % _MOD) * 32768 + al * b) % _MOD;
+  };
+
+  const powMod = (base, exp) => {
+    let result = 1;
+    base = ((base % _MOD) + _MOD) % _MOD;
+    while (exp > 0) {
+      if (exp & 1) result = mulMod(result, base);
+      base = mulMod(base, base);
+      exp = Math.floor(exp / 2);
     }
     return result;
   };
 
-  const ensureMod = (n, MOD) => {
-    let cache = modCaches.get(MOD);
-    if (!cache) {
-      cache = { fact: [1n], invFact: [1n], computed: 0 };
-      modCaches.set(MOD, cache);
-    }
-    if (n <= cache.computed) return cache;
-    const oldSize = cache.computed;
-    const newSize = Math.max(n, oldSize * 2, 64);
-    const { fact, invFact } = cache;
-    for (let i = oldSize + 1; i <= newSize; i++) {
-      fact[i] = (fact[i - 1] * BigInt(i)) % MOD;
-    }
-    invFact[newSize] = modpow(fact[newSize], MOD - 2n, MOD);
-    for (let i = newSize - 1; i > oldSize; i--) {
-      invFact[i] = (invFact[i + 1] * BigInt(i + 1)) % MOD;
-    }
-    cache.invFact = invFact;
-    cache.computed = newSize;
-    return cache;
+  const invMod = (a) => powMod(a, _MOD - 2);
+
+  const fact = new Float64Array(_CAP + 1);
+  const invFact = new Float64Array(_CAP + 1);
+  fact[0] = 1;
+  for (let i = 1; i <= _CAP; i++) fact[i] = mulMod(fact[i - 1], i);
+  invFact[_CAP] = invMod(fact[_CAP]);
+  for (let i = _CAP - 1; i >= 0; i--)
+    invFact[i] = mulMod(invFact[i + 1], i + 1);
+
+  /**
+   * @param {number} n
+   * @param {number} r
+   * @returns {number}
+   */
+  const nCr = (n, r) => {
+    if (r < 0 || r > n) return 0;
+    return mulMod(mulMod(fact[n], invFact[r]), invFact[n - r]);
   };
 
   /**
    * @param {number} n
    * @param {number} r
-   * @param {number} [MOD] - Must be a prime number (uses Fermat's little theorem)
    * @returns {number}
    */
-  return (n, r, MOD) => {
+  const nPr = (n, r) => {
     if (r < 0 || r > n) return 0;
+    return mulMod(fact[n], invFact[n - r]);
+  };
 
-    if (MOD === undefined) {
-      const k = Math.min(r, n - r);
-      let result = 1n;
-      for (let i = 0; i < k; i++) {
-        result = (result * BigInt(n - i)) / BigInt(i + 1);
-        if (result > MAX_SAFE) {
-          throw new RangeError(
-            `nCr(${n}, ${r}) exceeds Number.MAX_SAFE_INTEGER ` +
-              `(detected at step ${i + 1}, partial value ≈ ${result.toString()}); ` +
-              `pass MOD argument`,
-          );
-        }
-      }
-      return Number(result);
-    }
+  /**
+   * @param {number} n
+   * @param {number} r
+   * @returns {number}
+   */
+  const nHr = (n, r) => nCr(n - 1 + r, r);
 
-    if (!Number.isSafeInteger(MOD) || MOD < 2) {
-      throw new TypeError(`MOD must be a safe integer ≥ 2, got ${MOD}`);
-    }
-    const M = BigInt(MOD);
-    const { fact, invFact } = ensureMod(n, M);
-    return Number((((fact[n] * invFact[r]) % M) * invFact[n - r]) % M);
+  return {
+    nCr,
+    nPr,
+    nHr,
   };
 })();
 
