@@ -92,6 +92,69 @@ function distinct_permutations(iterable) {
   return result;
 }
 
+const nCr = (() => {
+  const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
+  const modCaches = new Map();
+
+  const modpow = (base, exp, mod) => {
+    let result = 1n;
+    base %= mod;
+    while (exp > 0n) {
+      if (exp & 1n) result = (result * base) % mod;
+      base = (base * base) % mod;
+      exp >>= 1n;
+    }
+    return result;
+  };
+
+  const ensureMod = (n, MOD) => {
+    let cache = modCaches.get(MOD);
+    if (!cache) {
+      cache = { fact: [1n], invFact: [1n], computed: 0 };
+      modCaches.set(MOD, cache);
+    }
+    if (n <= cache.computed) return cache;
+    const oldSize = cache.computed;
+    const newSize = Math.max(n, oldSize * 2, 64);
+    const { fact, invFact } = cache;
+    for (let i = oldSize + 1; i <= newSize; i++) {
+      fact[i] = (fact[i - 1] * BigInt(i)) % MOD;
+    }
+    invFact[newSize] = modpow(fact[newSize], MOD - 2n, MOD);
+    for (let i = newSize - 1; i > oldSize; i--) {
+      invFact[i] = (invFact[i + 1] * BigInt(i + 1)) % MOD;
+    }
+    cache.invFact = invFact;
+    cache.computed = newSize;
+    return cache;
+  };
+
+  /** @type {(n: number, r: number, MOD?: number) => number} */
+  return (n, r, MOD) => {
+    if (r < 0 || r > n) return 0;
+
+    if (MOD === undefined) {
+      const k = Math.min(r, n - r);
+      let result = 1n;
+      for (let i = 0; i < k; i++) {
+        result = (result * BigInt(n - i)) / BigInt(i + 1);
+        if (result > MAX_SAFE) {
+          throw new RangeError(
+            `nCr(${n}, ${r}) exceeds Number.MAX_SAFE_INTEGER ` +
+              `(detected at step ${i + 1}, partial value ≈ ${result.toString()}); ` +
+              `pass MOD argument`,
+          );
+        }
+      }
+      return Number(result);
+    }
+
+    const M = BigInt(MOD);
+    const { fact, invFact } = ensureMod(n, M);
+    return Number((((fact[n] * invFact[r]) % M) * invFact[n - r]) % M);
+  };
+})();
+
 const prime_sieve = (x) => {
   const composite = new Uint8Array(x + 1);
 
