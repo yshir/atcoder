@@ -1,71 +1,159 @@
 const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split('\n');
 const [a, b, c] = input[0].split(' ').map(Number);
 
-const M = 998244353;
+class ModComb {
+  /** @type {number} The prime modulus bound to this instance. */
+  MOD;
 
-const { nHr, mulMod } = (() => {
-  const _MOD = 998244353;
-  const _CAP = 1e7;
+  /** @type {Float64Array} fact[i] = i! mod MOD for i in [0, maxN]. */
+  #fact;
+  /** @type {Float64Array} invFact[i] = (i!)^(-1) mod MOD for i in [0, maxN]. */
+  #invFact;
 
-  const mulMod = (a, b) => {
+  /**
+   * Creates a combinatorics context bound to the given prime modulus.
+   * Factorial and inverse-factorial tables are fully precomputed up to
+   * `maxN` in the constructor, giving O(1) per query thereafter.
+   *
+   * @param {number} MOD - Prime modulus; must be a safe integer < 2^34.
+   * @param {number} maxN - Largest index that will be queried; must be a
+   *   non-negative integer with maxN < MOD.
+   *
+   * @example
+   * const mc = new ModComb(998244353, 1e7);
+   * mc.nCr(10, 3);           // 120
+   * mc.nPr(10, 3);           // 720
+   * mc.nHr(5, 3);            // 35
+   * mc.powMod(2, 1_000_000); // 2^1000000 mod 998244353
+   */
+  constructor(MOD, maxN) {
+    if (!Number.isSafeInteger(MOD) || MOD < 2 || MOD >= 2 ** 34) {
+      throw new RangeError(`MOD must be a safe integer in [2, 2^34), got ${MOD}`);
+    }
+    if (!Number.isSafeInteger(maxN) || maxN < 0 || maxN >= MOD) {
+      throw new RangeError(`maxN must be a non-negative integer < MOD, got ${maxN}`);
+    }
+    this.MOD = MOD;
+
+    const fact = new Float64Array(maxN + 1);
+    const invFact = new Float64Array(maxN + 1);
+    fact[0] = 1;
+    for (let i = 1; i <= maxN; i++) fact[i] = this.mulMod(fact[i - 1], i);
+    invFact[maxN] = this.invMod(fact[maxN]);
+    for (let i = maxN - 1; i >= 0; i--) invFact[i] = this.mulMod(invFact[i + 1], i + 1);
+    this.#fact = fact;
+    this.#invFact = invFact;
+  }
+
+  /**
+   * Returns the binomial coefficient C(n, r) mod MOD. Yields 0 when r is
+   * negative or exceeds n.
+   *
+   * @param {number} n - Non-negative integer; must be ≤ maxN.
+   * @param {number} r - Integer; combinations of n choose r.
+   * @returns {number} C(n, r) mod MOD, in [0, MOD).
+   */
+  nCr(n, r) {
+    if (r < 0 || r > n) return 0;
+    return this.mulMod(this.mulMod(this.#fact[n], this.#invFact[r]), this.#invFact[n - r]);
+  }
+
+  /**
+   * Returns the permutation count P(n, r) = n! / (n - r)! mod MOD.
+   * Yields 0 when r is negative or exceeds n.
+   *
+   * @param {number} n - Non-negative integer; must be ≤ maxN.
+   * @param {number} r - Integer; permutations of length r.
+   * @returns {number} P(n, r) mod MOD, in [0, MOD).
+   */
+  nPr(n, r) {
+    if (r < 0 || r > n) return 0;
+    return this.mulMod(this.#fact[n], this.#invFact[n - r]);
+  }
+
+  /**
+   * Returns the multiset combination H(n, r) = C(n + r - 1, r) mod MOD,
+   * i.e. ways to choose r items from n types with repetition allowed.
+   * Requires n + r - 1 ≤ maxN.
+   *
+   * @param {number} n - Number of distinct types (non-negative integer).
+   * @param {number} r - Number of items to choose (non-negative integer).
+   * @returns {number} H(n, r) mod MOD, in [0, MOD).
+   */
+  nHr(n, r) {
+    return this.nCr(n - 1 + r, r);
+  }
+
+  /**
+   * Computes (a * b) mod MOD using a 15-bit split to keep all intermediate
+   * products within Number.MAX_SAFE_INTEGER (2^53). Required when MOD ≥ 2^26,
+   * since a naive a * b would overflow Number precision.
+   *
+   * @param {number} a - Operand in [0, MOD).
+   * @param {number} b - Operand in [0, MOD).
+   * @returns {number} (a * b) mod MOD, in [0, MOD).
+   */
+  mulMod(a, b) {
     const ah = Math.floor(a / 32768);
     const al = a % 32768;
-    return (((ah * b) % _MOD) * 32768 + al * b) % _MOD;
-  };
+    return (((ah * b) % this.MOD) * 32768 + al * b) % this.MOD;
+  }
 
-  const powMod = (base, exp) => {
-    let result = 1;
-    base = ((base % _MOD) + _MOD) % _MOD;
+  /**
+   * Computes the modular inverse of `a` under MOD via Fermat's little theorem:
+   * a^(-1) ≡ a^(MOD-2) (mod MOD). Requires MOD to be prime and gcd(a, MOD) = 1.
+   *
+   * @param {number} a - Value to invert, in [1, MOD).
+   * @returns {number} The modular inverse of a, in [1, MOD).
+   */
+  invMod(a) {
+    return this.powMod(a, this.MOD - 2);
+  }
+
+  /**
+   * Computes (base ^ exp) mod MOD by binary exponentiation. Runs in O(log exp)
+   * multiplications. Handles negative or out-of-range `base` by reducing it
+   * into [0, MOD) up front.
+   *
+   * @param {number} base - Base of the exponentiation.
+   * @param {number} exp - Non-negative integer exponent.
+   * @returns {number} (base ^ exp) mod MOD, in [0, MOD).
+   */
+  powMod(base, exp) {
+    let r = 1;
+    base = ((base % this.MOD) + this.MOD) % this.MOD;
     while (exp > 0) {
-      if (exp & 1) result = mulMod(result, base);
-      base = mulMod(base, base);
+      if (exp & 1) r = this.mulMod(r, base);
+      base = this.mulMod(base, base);
       exp = Math.floor(exp / 2);
     }
-    return result;
-  };
-
-  const invMod = (a) => powMod(a, _MOD - 2);
-
-  const fact = new Float64Array(_CAP + 1);
-  const invFact = new Float64Array(_CAP + 1);
-  fact[0] = 1;
-  for (let i = 1; i <= _CAP; i++) fact[i] = mulMod(fact[i - 1], i);
-  invFact[_CAP] = invMod(fact[_CAP]);
-  for (let i = _CAP - 1; i >= 0; i--) invFact[i] = mulMod(invFact[i + 1], i + 1);
+    return r;
+  }
 
   /**
-   * @param {number} n
-   * @param {number} r
-   * @returns {number}
+   * Computes (a + b) mod MOD.
+   * @param {number} a - Operand in [0, MOD).
+   * @param {number} b - Operand in [0, MOD).
+   * @returns {number} (a + b) mod MOD, in [0, MOD).
    */
-  const nCr = (n, r) => {
-    if (r < 0 || r > n) return 0;
-    return mulMod(mulMod(fact[n], invFact[r]), invFact[n - r]);
-  };
+  addMod(a, b) {
+    return (a + b) % this.MOD;
+  }
 
   /**
-   * @param {number} n
-   * @param {number} r
-   * @returns {number}
+   * Computes (a - b) mod MOD, normalizing into [0, MOD).
+   * @param {number} a - Operand in [0, MOD).
+   * @param {number} b - Operand in [0, MOD).
+   * @returns {number} (a - b) mod MOD, in [0, MOD).
    */
-  const nPr = (n, r) => {
-    if (r < 0 || r > n) return 0;
-    return mulMod(fact[n], invFact[n - r]);
-  };
+  subMod(a, b) {
+    return (((a - b) % this.MOD) + this.MOD) % this.MOD;
+  }
+}
 
-  /**
-   * @param {number} n
-   * @param {number} r
-   * @returns {number}
-   */
-  const nHr = (n, r) => nCr(n - 1 + r, r);
+const M = 998244353;
 
-  return {
-    nCr,
-    nPr,
-    nHr,
-  };
-})();
+const mc = new ModComb(M, 1e7);
 
 let ans = 0;
 
@@ -80,10 +168,10 @@ const f = (a, b, c) => {
     const nc = c - gc;
 
     let cur = 1;
-    cur = mulMod(cur, nHr(ga, na));
-    cur = mulMod(cur, nHr(gc, nc));
-    cur = mulMod(cur, nHr(a + c + 1, nb));
-    ans = (ans + cur) % M;
+    cur = mc.mulMod(cur, mc.nHr(ga, na));
+    cur = mc.mulMod(cur, mc.nHr(gc, nc));
+    cur = mc.mulMod(cur, mc.nHr(a + c + 1, nb));
+    ans = mc.addMod(ans, cur);
   }
 };
 
