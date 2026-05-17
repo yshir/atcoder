@@ -129,7 +129,12 @@ const nCr = (() => {
     return cache;
   };
 
-  /** @type {(n: number, r: number, MOD?: number) => number} */
+  /**
+   * @param {number} n
+   * @param {number} r
+   * @param {number} [MOD] - Must be a prime number (uses Fermat's little theorem)
+   * @returns {number}
+   */
   return (n, r, MOD) => {
     if (r < 0 || r > n) return 0;
 
@@ -149,6 +154,9 @@ const nCr = (() => {
       return Number(result);
     }
 
+    if (!Number.isSafeInteger(MOD) || MOD < 2) {
+      throw new TypeError(`MOD must be a safe integer ≥ 2, got ${MOD}`);
+    }
     const M = BigInt(MOD);
     const { fact, invFact } = ensureMod(n, M);
     return Number((((fact[n] * invFact[r]) % M) * invFact[n - r]) % M);
