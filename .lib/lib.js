@@ -356,14 +356,14 @@ class PriorityQueue {
 class UnionFind {
   constructor(n) {
     if (n <= 0) throw new RangeError(n);
-    this.parent = Array.from({ length: n }, (_, i) => i); // parent が自分自身の場合は root
+    this.parent = Array.from({ length: n }, (_, i) => i); // parent[i] === i means root
     this.size = Array(n).fill(1);
   }
 
   find(x) {
     if (x < 0 || x >= this.parent.length) throw new RangeError(x);
     if (this.parent[x] !== x) {
-      this.parent[x] = this.find(this.parent[x]); // 経路圧縮
+      this.parent[x] = this.find(this.parent[x]); // route compression
     }
     return this.parent[x];
   }
