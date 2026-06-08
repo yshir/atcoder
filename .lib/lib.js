@@ -432,6 +432,19 @@ class FenwickTree {
   }
 
   /**
+   * Set position p to value x
+   * @param {number} p - position (0-indexed)
+   * @param {number} x - value to set
+   */
+  set(p, x) {
+    if (p < 0 || p >= this._n) {
+      throw new Error(`Index out of bounds: p=${p}, n=${this._n}`);
+    }
+    const current = this.sum(p, p + 1);
+    this.add(p, x - current);
+  }
+
+  /**
    * Return sum of range [l, r)
    * @param {number} l - left (0-indexed, inclusive)
    * @param {number} r - right (0-indexed, exclusive)
