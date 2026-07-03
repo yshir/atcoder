@@ -215,10 +215,7 @@ for (let i = 0; i < N; i++) {
 let ans = 0;
 for (const [k, v] of B) {
   if (k === 0) {
-    let cur = N - 1;
-    for (i = 0; i < v; i++) {
-      ans += cur--;
-    }
+    ans += (v * (2 * (N - 1) + (v - 1) * -1)) / 2;
   } else {
     if (v >= 2) {
       ans += (v * (v - 1)) / 2;
