@@ -9,27 +9,26 @@ const A = input[1].split(' ').map(Number);
  *
  * @param {number} a - Operand in [0, MOD).
  * @param {number} b - Operand in [0, MOD).
- * @param {number} MOD - Modulus, must be < 2^34.
  * @returns {number} (a * b) mod MOD, in [0, MOD).
  */
-const modmul = (a, b, MOD) => {
+const modmul = (a, b) => {
   const ah = Math.floor(a / 32768);
   const al = a % 32768;
-  return (((ah * b) % MOD) * 32768 + al * b) % MOD;
+  return (((ah * b) % P) * 32768 + al * b) % P;
 };
 
 let ans = 0;
 for (let i1 = 0; i1 < N; i1++) {
-  let cur = A[i1];
+  const v1 = A[i1];
   for (let i2 = i1 + 1; i2 < N; i2++) {
-    cur = modmul(cur, A[i2], P);
+    const v2 = modmul(v1, A[i2]);
     for (let i3 = i2 + 1; i3 < N; i3++) {
-      cur = modmul(cur, A[i3], P);
+      const v3 = modmul(v2, A[i3]);
       for (let i4 = i3 + 1; i4 < N; i4++) {
-        cur = modmul(cur, A[i4], P);
+        const v4 = modmul(v3, A[i4]);
         for (let i5 = i4 + 1; i5 < N; i5++) {
-          cur = modmul(cur, A[i5], P);
-          if (cur === Q) {
+          const v5 = modmul(v4, A[i5]);
+          if (v5 === Q) {
             ans++;
           }
         }
