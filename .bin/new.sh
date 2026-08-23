@@ -47,6 +47,6 @@ max_line_length = 120
 EOF
 
 cat <<-EOF > a.js
-const input = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split('\n');
+const input = require('fs').readFileSync(0, 'utf8').trim().split('\n');
 const [N] = input[0].split(' ').map(Number);
 EOF
