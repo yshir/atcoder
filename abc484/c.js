@@ -3,71 +3,40 @@ const [N] = input[0].split(' ').map(Number);
 const A = input[1].split(' ').map(Number);
 const B = input[2].split(' ').map(Number);
 
-const test0 = () => {
+const same = (A, B) => {
   let ok = true;
-  for (let i = 0; i < N; i++) {
+  for (let i = 0; i < A.length; i++) {
     if (A[i] !== B[i]) ok = false;
   }
   return ok;
 };
 
-const test1 = () => {
-  let i = 0;
-  let j = 0;
-  let v = null;
-  while (i < N || j < N) {
-    if (A[i] === B[j]) {
-      i++;
-      j++;
-      continue;
-    }
-
-    if (v === null) {
-      v = A[i];
-      i++;
-      continue;
-    }
-
-    if (v === B[j]) {
-      v = -1;
-      j++;
-      continue;
-    }
-
-    return false;
+const shift_l = (A) => {
+  const B = [];
+  for (let i = 1; i < A.length; i++) {
+    B.push(A[i]);
   }
-  return true;
+  B.push(A[0]);
+  return B;
 };
 
-const test2 = () => {
-  let i = 0;
-  let j = 0;
-  let v = null;
-  while (i < N || j < N) {
-    if (A[i] === B[j]) {
-      i++;
-      j++;
-      continue;
-    }
+if (same(A, B)) {
+  console.log('Yes');
+  return;
+}
 
-    if (v === null) {
-      v = B[j];
-      j++;
-      continue;
-    }
+let L = 0;
+while (A[L] === B[L] && L < N - 1) L++;
+let R = N - 1;
+while (A[R] === B[R] && R > 0) R--;
 
-    if (v === A[i]) {
-      v = -1;
-      i++;
-      continue;
-    }
+const C = [...A].slice(L, R + 1);
+const D = [...B].slice(L, R + 1);
 
-    return false;
-  }
-  return true;
-};
-
-if (test0() || test1() || test2()) {
+if (
+  same(C, shift_l(D)) ||
+  same(shift_l(C), D) //
+) {
   console.log('Yes');
 } else {
   console.log('No');
